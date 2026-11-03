@@ -1,8 +1,10 @@
 Flask
 flask-cors
+PyMySQL>=1.1
 mysql-connector-python
 python-dotenv
 gunicorn
 pandas
 numpy
 matplotlib
+openpyxl
