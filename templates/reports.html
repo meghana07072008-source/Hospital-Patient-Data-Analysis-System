@@ -1,0 +1,182 @@
+{% extends "layout_app.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block page_sub %}Department workload, visit trends and age-band summaries. Aggregates only.{% endblock %}
+{% block content %}
+
+<form class="filters card" method="get" action="{{ url_for('reports') }}">
+  <div class="field">
+    <label for="start">From</label>
+    <input id="start" type="date" name="start" value="{{ f.start.date().isoformat() }}" min="{{ f.dmin.date().isoformat() }}" max="{{ f.dmax.date().isoformat() }}">
+  </div>
+  <div class="field">
+    <label for="end">To</label>
+    <input id="end" type="date" name="end" value="{{ f.end.date().isoformat() }}" min="{{ f.dmin.date().isoformat() }}" max="{{ f.dmax.date().isoformat() }}">
+  </div>
+  <div class="field">
+    <label for="department">Department</label>
+    <select id="department" name="department">
+      <option value="">All departments</option>
+      {% for d in f.departments %}<option value="{{ d }}" {{ 'selected' if d == f.department }}>{{ d }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="visit_type">Visit type</label>
+    <select id="visit_type" name="visit_type">
+      <option value="">All types</option>
+      {% for t in visit_types %}<option value="{{ t }}" {{ 'selected' if t == f.visit_type }}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="filters-actions">
+    <button class="btn btn-primary" type="submit">{{ icon('filter', 16) }}<span>Apply filters</span></button>
+    <a class="btn btn-ghost" href="{{ url_for('reports') }}">Reset</a>
+  </div>
+</form>
+
+<div class="report-bar">
+  <p class="report-period"><strong>{{ total|num }}</strong> visits from {{ f.start.strftime('%d %b %Y') }} to {{ f.end.strftime('%d %b %Y') }}{% if f.department %}, {{ f.department }}{% endif %}{% if f.visit_type %}, {{ f.visit_type }} visits{% endif %}</p>
+  <div class="report-actions">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('export', kind='report.xlsx') }}?{{ qs }}">{{ icon('download', 16) }}<span>Excel</span></a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('export', kind='departments.csv') }}?{{ qs }}">{{ icon('download', 16) }}<span>Departments CSV</span></a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('export', kind='monthly.csv') }}?{{ qs }}">{{ icon('download', 16) }}<span>Monthly CSV</span></a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('export', kind='age_bands.csv') }}?{{ qs }}">{{ icon('download', 16) }}<span>Age bands CSV</span></a>
+    <button class="btn btn-ghost btn-sm" type="button" data-print>{{ icon('printer', 16) }}<span>Print</span></button>
+  </div>
+</div>
+
+{% if total == 0 %}
+  <section class="card empty-card">
+    <h3>No visits match these filters</h3>
+    <p class="muted">Widen the date range or choose All departments and All types, then apply the filters again.</p>
+  </section>
+{% else %}
+
+<section class="stat-strip">
+  <div><span>Mean per day</span><strong>{{ stats.mean }}</strong></div>
+  <div><span>Median per day</span><strong>{{ stats.median }}</strong></div>
+  <div><span>90th percentile</span><strong>{{ stats.p90 }}</strong></div>
+  <div><span>Quietest day</span><strong>{{ stats.min }}</strong></div>
+  <div><span>Busiest day</span><strong>{{ stats.max }}</strong></div>
+  <div><span>Spread (variation)</span><strong>{{ stats.cv }}%</strong></div>
+</section>
+
+<section class="card report-block">
+  <header class="card-head"><h3>Department-wise workload</h3><p>Visits, share of total and average load per day</p></header>
+  {% set mx = dept[0]['Visits'] if dept else 1 %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Department</th><th class="w-bar">Visits</th><th class="num">Share</th><th class="num">Avg per day</th><th>Busiest weekday</th><th>Peak month</th><th class="num">Emergency</th></tr></thead>
+      <tbody>
+      {% for r in dept %}
+        <tr style="--i: {{ loop.index0 }}">
+          <td><strong>{{ r['Department'] }}</strong></td>
+          <td><div class="bar-cell"><span class="bar {{ 'bar-coral' if r['Department'] == 'Emergency Medicine' }}" style="--w: {{ (r['Visits'] / mx * 100)|round(1) }}%"></span><b>{{ r['Visits']|num }}</b></div></td>
+          <td class="num">{{ r['Share %'] }}%</td>
+          <td class="num">{{ r['Avg per day'] }}</td>
+          <td>{{ r['Busiest weekday'] }}</td>
+          <td>{{ r['Peak month'] }}</td>
+          <td class="num">{{ r['Emergency %'] }}%</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='departments') }}?{{ qs }}" alt="Bar chart of total visits per department"></figure>
+</section>
+
+<section class="two-col">
+  <article class="card report-block">
+    <header class="card-head"><h3>Monthly visit trend</h3><p>* marks a partial month</p></header>
+    {% set mm = (monthly|map(attribute='Visits')|max) or 1 %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Month</th><th class="w-bar">Visits</th><th class="num">Change</th></tr></thead>
+        <tbody>
+        {% for r in monthly %}
+          <tr style="--i: {{ loop.index0 }}">
+            <td>{{ r['Month'] }}{{ ' *' if r['Partial month'] }}</td>
+            <td><div class="bar-cell"><span class="bar {{ 'bar-light' if r['Partial month'] }}" style="--w: {{ (r['Visits'] / mm * 100)|round(1) }}%"></span><b>{{ r['Visits']|num }}</b></div></td>
+            <td class="num">{% if r['Change vs previous month %'] is none or r['Change vs previous month %'] != r['Change vs previous month %'] %}-{% else %}{{ '+' if r['Change vs previous month %'] > 0 }}{{ r['Change vs previous month %'] }}%{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='monthly') }}?{{ qs }}" alt="Chart of visits per month"></figure>
+  </article>
+
+  <article class="card report-block">
+    <header class="card-head"><h3>Age-band summary</h3><p>Counts under {{ config.MIN_CELL }} are hidden</p></header>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Age band</th><th class="w-bar">Share of visits</th><th class="num">Visits</th></tr></thead>
+        <tbody>
+        {% for r in ages %}
+          <tr style="--i: {{ loop.index0 }}">
+            <td>{{ r['Age band'] }}</td>
+            <td><div class="bar-cell"><span class="bar" style="--w: {{ r['Share %'] * 3 }}%"></span><b>{{ r['Share %'] }}%</b></div></td>
+            <td class="num">{% if r['Visits'] is none or r['Visits'] != r['Visits'] %}&lt;5{% else %}{{ r['Visits']|int|num }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='age_bands') }}?{{ qs }}" alt="Chart of visits per age band"></figure>
+  </article>
+</section>
+
+<section class="card report-block">
+  <header class="card-head"><h3>Age band by department</h3><p>Darker cells mean more visits. Cells under {{ config.MIN_CELL }} show &lt;5</p></header>
+  {% set cmax = namespace(v=1) %}
+  {% for row in xtab %}{% for c in row.cells %}{% if c and c > cmax.v %}{% set cmax.v = c %}{% endif %}{% endfor %}{% endfor %}
+  <div class="table-wrap">
+    <table class="table table-heat">
+      <thead><tr><th>Department</th>{% for a in age_order %}<th class="num">{{ a }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for row in xtab %}
+        <tr>
+          <td><strong>{{ row.department }}</strong></td>
+          {% for c in row.cells %}
+            {% if c is none %}<td class="num hcell muted">&lt;5</td>
+            {% else %}<td class="num hcell" style="--h: {{ (c / cmax.v)|round(3) }}">{{ c|num }}</td>{% endif %}
+          {% endfor %}
+          <td class="num"><strong>{{ row.total|num }}</strong></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="two-col">
+  <article class="card report-block">
+    <header class="card-head"><h3>Visit types</h3><p>How visits were recorded</p></header>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Type</th><th class="num">Visits</th><th class="num">Share</th></tr></thead>
+        <tbody>
+        {% for r in types %}
+          <tr><td>{{ r['Visit type'] }}</td><td class="num">{{ r['Visits']|num }}</td><td class="num">{{ r['Share %'] }}%</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <figure class="figure figure-sm"><img loading="lazy" src="{{ url_for('chart', name='visit_types') }}?{{ qs }}" alt="Donut chart of visit types"></figure>
+  </article>
+  <article class="card report-block">
+    <header class="card-head"><h3>Weekly pattern</h3><p>Average visits per weekday</p></header>
+    <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='weekday') }}?{{ qs }}" alt="Bar chart of average visits per weekday"></figure>
+    <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='daily') }}?{{ qs }}" alt="Line chart of daily visits"></figure>
+  </article>
+</section>
+
+<section class="card report-block">
+  <header class="card-head"><h3>Department by weekday</h3><p>Average visits per day</p></header>
+  <figure class="figure"><img loading="lazy" src="{{ url_for('chart', name='heatmap') }}?{{ qs }}" alt="Heatmap of average daily visits by department and weekday"></figure>
+</section>
+
+{% endif %}
+
+<p class="report-note">Reports contain aggregated counts only.</p>
+{% endblock %}

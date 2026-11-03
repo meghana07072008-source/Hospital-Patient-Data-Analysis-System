@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block body_class %}page-app{% endblock %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <a class="brand brand-light" href="{{ url_for('index') }}">
+      <span class="brand-mark">{{ icon('pulse', 20) }}</span>
+      <span>Pulseboard</span>
+    </a>
+
+    <nav class="nav">
+      <p class="nav-label">Analytics</p>
+      <a class="nav-item {{ 'active' if active == 'dashboard' }}" href="{{ url_for('dashboard') }}">{{ icon('grid') }}<span>Dashboard</span></a>
+      <a class="nav-item {{ 'active' if active == 'reports' }}" href="{{ url_for('reports') }}">{{ icon('file') }}<span>Reports</span></a>
+
+      {% if current_user.role == 'admin' %}
+      <p class="nav-label">Administration</p>
+      <a class="nav-item {{ 'active' if active == 'admin' }}" href="{{ url_for('admin_dashboard') }}">{{ icon('shield') }}<span>Admin console</span></a>
+      <a class="nav-item {{ 'active' if active == 'records' }}" href="{{ url_for('admin_records') }}">{{ icon('list') }}<span>Visit records</span></a>
+      <a class="nav-item {{ 'active' if active == 'data' }}" href="{{ url_for('admin_data') }}">{{ icon('database') }}<span>Data tools</span></a>
+      <a class="nav-item {{ 'active' if active == 'users' }}" href="{{ url_for('admin_users') }}">{{ icon('users') }}<span>Users</span></a>
+      <a class="nav-item {{ 'active' if active == 'audit' }}" href="{{ url_for('admin_audit') }}">{{ icon('clock') }}<span>Audit log</span></a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+      <span class="dot-live"></span>
+      <p>Synthetic data. Aggregates only.</p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn burger" id="burger" aria-label="Open navigation">{{ icon('menu', 20) }}</button>
+      <div class="page-title">
+        <h1>{% block page_title %}{% endblock %}</h1>
+        <p>{% block page_sub %}{% endblock %}</p>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Switch colour theme">
+          <span class="theme-sun">{{ icon('sun', 18) }}</span><span class="theme-moon">{{ icon('moon', 18) }}</span>
+        </button>
+        <div class="user-chip">
+          <span class="avatar">{{ current_user.full_name[:1]|upper }}</span>
+          <div class="user-meta"><strong>{{ current_user.full_name }}</strong><small>{{ 'Administrator' if current_user.role == 'admin' else 'Analyst' }}</small></div>
+        </div>
+        <form method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-sm" type="submit">{{ icon('logout', 16) }}<span>Sign out</span></button>
+        </form>
+      </div>
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="foot">
+      <p>{{ disclaimer }}</p>
+    </footer>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+{% endblock %}

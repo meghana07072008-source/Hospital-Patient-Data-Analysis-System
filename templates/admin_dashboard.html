@@ -1,0 +1,34 @@
+{% extends "layout_app.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Admin console{% endblock %}
+{% block page_title %}Admin console{% endblock %}
+{% block page_sub %}System overview, workload indicators and access activity.{% endblock %}
+{% block content %}
+  <section class="sys" aria-label="System overview">
+    <article class="sys-tile"><span class="sys-ico">{{ icon('users', 18) }}</span><div><p class="sys-num" data-count="{{ system.users }}">{{ system.users }}</p><p class="sys-label">Accounts ({{ system.admins }} admin{{ '' if system.admins == 1 else 's' }}{% if system.disabled %}, {{ system.disabled }} disabled{% endif %})</p></div></article>
+    <article class="sys-tile"><span class="sys-ico">{{ icon('list', 18) }}</span><div><p class="sys-num" data-count="{{ system.visits }}">{{ system.visits }}</p><p class="sys-label">Synthetic visits stored</p></div></article>
+    <article class="sys-tile"><span class="sys-ico">{{ icon('database', 18) }}</span><div><p class="sys-num" data-count="{{ system.patients }}">{{ system.patients }}</p><p class="sys-label">De-identified patients in {{ system.departments }} departments</p></div></article>
+    <article class="sys-tile {{ 'warn' if system.failed_24h }}"><span class="sys-ico">{{ icon('shield', 18) }}</span><div><p class="sys-num" data-count="{{ system.events_24h }}">{{ system.events_24h }}</p><p class="sys-label">Access events in 24 hours, {{ system.failed_24h }} failed sign-in{{ '' if system.failed_24h == 1 else 's' }}</p></div></article>
+  </section>
+
+  {% with dash_scope='admin' %}{% include "_dash_core.html" %}{% endwith %}
+
+  <section class="card recent">
+    <header class="card-head"><h3>Recent access activity</h3><a class="link" href="{{ url_for('admin_audit') }}">Full audit log</a></header>
+    {% if recent %}
+    <ul class="activity">
+      {% for r in recent %}
+        <li><span class="act-tag act-{{ 'bad' if r.action in ('login_failed', 'access_denied') else 'ok' }}">{{ r.action|replace('_', ' ') }}</span><span class="act-who">{{ r.email or 'anonymous' }}</span><span class="act-detail">{{ r.detail or '' }}</span><time>{{ r.created_at|tstr }}</time></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="empty">No activity recorded yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}

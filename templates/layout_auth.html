@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block body_class %}page-auth{% endblock %}
+{% block body %}
+<main class="auth">
+  <section class="auth-stage" aria-hidden="true">
+    <a class="brand brand-light" href="{{ url_for('index') }}">
+      <span class="brand-mark">{{ icon('pulse', 20) }}</span>
+      <span>Pulseboard</span>
+    </a>
+
+    <div class="stage-copy">
+      <h1>Know where patient demand lands, day by day.</h1>
+      <p>Department workload, monthly visit trends and age-band summaries, built from synthetic hospital records.</p>
+    </div>
+
+    <div class="ecg">
+      <div class="ecg-track">
+        <svg viewBox="0 0 2400 160" preserveAspectRatio="none" width="2400" height="160">
+          {% for i in range(12) %}
+          <path transform="translate({{ i * 200 }},0)" d="M0 92 H48 Q58 78 68 92 H84 L90 100 L102 18 L114 128 L120 92 H146 Q166 62 186 92 H200"/>
+          {% endfor %}
+        </svg>
+      </div>
+    </div>
+
+    <ul class="stage-points">
+      <li>{{ icon('shield', 18) }}<span>Aggregates only. Individual records never appear in reports.</span></li>
+      <li>{{ icon('database', 18) }}<span>Synthetic, de-identified data stored in MySQL.</span></li>
+      <li>{{ icon('chart', 18) }}<span>Operational statistics, not clinical advice.</span></li>
+    </ul>
+  </section>
+
+  <section class="auth-panel">
+    <button type="button" class="icon-btn auth-theme" data-theme-toggle aria-label="Switch colour theme">
+      <span class="theme-sun">{{ icon('sun', 18) }}</span><span class="theme-moon">{{ icon('moon', 18) }}</span>
+    </button>
+    <div class="auth-card">
+      {% block card %}{% endblock %}
+    </div>
+    <p class="auth-foot">{{ disclaimer }}</p>
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "layout_auth.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Create account{% endblock %}
+{% block card %}
+<h2>Create your account</h2>
+<p class="muted">Registered accounts get the user dashboard and aggregated reports.</p>
+
+<form method="post" class="form" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="field {{ 'invalid' if errors.name }}">
+    <label for="name">Full name</label>
+    <input id="name" name="name" type="text" value="{{ form.name }}" autocomplete="name" required maxlength="60">
+    {% if errors.name %}<p class="field-error">{{ errors.name }}</p>{% endif %}
+  </div>
+
+  <div class="field {{ 'invalid' if errors.email }}">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" value="{{ form.email }}" autocomplete="email" required>
+    {% if errors.email %}<p class="field-error">{{ errors.email }}</p>{% endif %}
+  </div>
+
+  <div class="field {{ 'invalid' if errors.password }}">
+    <label for="password">Password</label>
+    <div class="pw">
+      <input id="password" name="password" type="password" autocomplete="new-password" required data-strength="#meter">
+      <button type="button" class="pw-toggle" data-toggle-pw aria-label="Show password">{{ icon('eye', 18) }}</button>
+    </div>
+    <div class="meter" id="meter" data-level="0"><span></span><span></span><span></span><span></span><em>Use 8 or more characters with a letter and a number.</em></div>
+    {% if errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
+  </div>
+
+  <div class="field {{ 'invalid' if errors.confirm }}">
+    <label for="confirm">Confirm password</label>
+    <input id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+    {% if errors.confirm %}<p class="field-error">{{ errors.confirm }}</p>{% endif %}
+  </div>
+
+  <label class="check {{ 'invalid' if errors.ack }}">
+    <input type="checkbox" name="ack" value="1" {{ 'checked' if request.method == 'POST' and not errors.ack }}>
+    <span>I understand this system uses synthetic data only and shows operational statistics, not clinical advice.</span>
+  </label>
+  {% if errors.ack %}<p class="field-error">{{ errors.ack }}</p>{% endif %}
+
+  <button class="btn btn-primary btn-block" type="submit">Create account</button>
+</form>
+
+<p class="switch">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
+{% endblock %}

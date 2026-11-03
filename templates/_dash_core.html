@@ -1,0 +1,91 @@
+{# Shared dashboard body. Expects dash_scope = 'user' or 'admin'. #}
+{% from "_icons.html" import icon %}
+<div id="dash" class="dash is-loading" data-scope="{{ dash_scope }}">
+
+  <div class="range-bar">
+    <div class="seg" role="group" aria-label="Date range">
+      {% for d, label in ranges.items() %}
+        <button type="button" class="seg-btn {{ 'on' if d == 365 }}" data-days="{{ d }}">{{ label }}</button>
+      {% endfor %}
+    </div>
+    <p class="range-note" id="rangeNote">Loading data...</p>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('reports') }}">{{ icon('file', 16) }}<span>Open reports</span></a>
+  </div>
+
+  <section class="pulse" id="pulse" aria-label="Daily visits over the last 30 days">
+    <div class="pulse-copy">
+      <h2>Daily visits, last 30 days</h2>
+      <p class="pulse-figure"><span class="pulse-big" id="pulseAvg">0</span><span>visits per day on average</span></p>
+      <p class="pulse-peak" id="pulsePeak">&nbsp;</p>
+      <dl class="pulse-stats">
+        <div><dt>Median</dt><dd id="stMedian">-</dd></div>
+        <div><dt>90th percentile</dt><dd id="stP90">-</dd></div>
+        <div><dt>Daily spread</dt><dd id="stStd">-</dd></div>
+      </dl>
+    </div>
+    <div class="pulse-trace" id="pulseTrace">
+      <svg id="pulseSvg" viewBox="0 0 900 220" preserveAspectRatio="none" role="img" aria-label="ECG-style trace where each beat's height is one day's visit count"></svg>
+      <div class="pulse-tip" id="pulseTip" hidden></div>
+    </div>
+  </section>
+
+  <section class="kpis" aria-label="Key figures">
+    <article class="kpi">
+      <p class="kpi-label">Total visits</p>
+      <p class="kpi-value" id="kTotal">0</p>
+      <p class="kpi-foot" id="kTotalFoot">&nbsp;</p>
+    </article>
+    <article class="kpi">
+      <p class="kpi-label">Average per day</p>
+      <p class="kpi-value" id="kAvg">0</p>
+      <p class="kpi-foot" id="kAvgFoot">&nbsp;</p>
+    </article>
+    <article class="kpi">
+      <p class="kpi-label">Busiest department</p>
+      <p class="kpi-value kpi-text" id="kDept">-</p>
+      <p class="kpi-foot" id="kDeptFoot">&nbsp;</p>
+    </article>
+    <article class="kpi">
+      <p class="kpi-label">Busiest weekday</p>
+      <p class="kpi-value kpi-text" id="kDay">-</p>
+      <p class="kpi-foot" id="kDayFoot">&nbsp;</p>
+    </article>
+  </section>
+
+  <section class="grid">
+    <article class="card c-monthly">
+      <header class="card-head"><h3>Monthly visit trend</h3><p>Light bars are partial months</p></header>
+      <div class="chart-wrap"><canvas id="chMonthly" data-fallback="monthly"></canvas></div>
+    </article>
+    <article class="card c-types">
+      <header class="card-head"><h3>Visit types</h3><p>Share of all visits</p></header>
+      <div class="chart-wrap"><canvas id="chTypes" data-fallback="visit_types"></canvas></div>
+    </article>
+    <article class="card c-depts">
+      <header class="card-head"><h3>Department workload</h3><p>Total visits in the selected range</p></header>
+      <div class="chart-wrap tall"><canvas id="chDepts" data-fallback="departments"></canvas></div>
+    </article>
+    <article class="card c-ages">
+      <header class="card-head"><h3>Visits by age band</h3><p>Aggregated bands only</p></header>
+      <div class="chart-wrap"><canvas id="chAges" data-fallback="age_bands"></canvas></div>
+    </article>
+    <article class="card c-week">
+      <header class="card-head"><h3>Average visits by weekday</h3><p>Weekends in coral</p></header>
+      <div class="chart-wrap"><canvas id="chWeek" data-fallback="weekday"></canvas></div>
+    </article>
+  </section>
+
+  {% if dash_scope == 'admin' %}
+  <section class="grid grid-admin">
+    <article class="card c-flags">
+      <header class="card-head"><h3>Workload indicators</h3><p>Last 30 days compared with the 90 days before</p></header>
+      <ul class="flags" id="flags"></ul>
+      <p class="card-note">Operational load indicator only. It describes visit volume, not patients.</p>
+    </article>
+    <article class="card c-heat">
+      <header class="card-head"><h3>Department by weekday</h3><p>Average visits per day</p></header>
+      <div class="heat" id="heat"></div>
+    </article>
+  </section>
+  {% endif %}
+</div>

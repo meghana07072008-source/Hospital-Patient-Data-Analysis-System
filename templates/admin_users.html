@@ -1,0 +1,47 @@
+{% extends "layout_app.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block page_sub %}Control who can sign in and who can see the admin console.{% endblock %}
+{% block content %}
+<section class="card">
+  <header class="card-head"><h3>{{ users|length }} account{{ '' if users|length == 1 else 's' }}</h3><p>You cannot change your own role or disable your own account</p></header>
+  <div class="table-wrap">
+    <table class="table table-hover">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Last sign-in</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr>
+          <td><strong>{{ u.full_name }}</strong>{% if u.user_id == current_user.user_id %} <span class="pill pill-you">You</span>{% endif %}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            {% if u.user_id == current_user.user_id %}
+              <span class="pill pill-{{ u.role }}">{{ u.role }}</span>
+            {% else %}
+              <form method="post" action="{{ url_for('set_role', user_id=u.user_id) }}" class="role-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="role" aria-label="Role for {{ u.email }}" data-autosubmit>
+                  <option value="user" {{ 'selected' if u.role == 'user' }}>user</option>
+                  <option value="admin" {{ 'selected' if u.role == 'admin' }}>admin</option>
+                </select>
+              </form>
+            {% endif %}
+          </td>
+          <td><span class="pill {{ 'pill-active' if u.is_active else 'pill-off' }}">{{ 'Active' if u.is_active else 'Disabled' }}</span></td>
+          <td>{{ u.created_at|dstr }}</td>
+          <td>{{ u.last_login|tstr }}</td>
+          <td class="num">
+            {% if u.user_id != current_user.user_id %}
+            <form method="post" action="{{ url_for('toggle_user', user_id=u.user_id) }}" data-confirm="{{ 'Disable' if u.is_active else 'Enable' }} {{ u.email }}?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-ghost btn-sm" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

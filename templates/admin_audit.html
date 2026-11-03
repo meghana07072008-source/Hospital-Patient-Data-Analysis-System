@@ -1,0 +1,29 @@
+{% extends "layout_app.html" %}
+{% block title %}Audit log{% endblock %}
+{% block page_title %}Audit log{% endblock %}
+{% block page_sub %}The 150 most recent access and admin events.{% endblock %}
+{% block content %}
+<section class="card">
+  <header class="card-head"><h3>Access history</h3><p>Sign-ins, report views, exports, record views and admin changes</p></header>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table table-hover">
+      <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th><th>IP address</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="nowrap">{{ r.created_at|tstr }}</td>
+          <td>{{ r.email or 'anonymous' }}</td>
+          <td><span class="act-tag act-{{ 'bad' if r.action in ('login_failed', 'access_denied') else 'ok' }}">{{ r.action|replace('_', ' ') }}</span></td>
+          <td class="muted">{{ r.detail or '' }}</td>
+          <td class="muted">{{ r.ip_address or '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty">No events yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

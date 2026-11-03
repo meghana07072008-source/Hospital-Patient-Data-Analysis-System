@@ -1,0 +1,52 @@
+{% extends "layout_app.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Data tools{% endblock %}
+{% block page_title %}Data tools{% endblock %}
+{% block page_sub %}Maintain departments and synthetic patients, or regenerate the whole dataset.{% endblock %}
+{% block content %}
+
+<section class="sys" aria-label="Dataset size">
+  <article class="sys-tile"><span class="sys-ico">{{ icon('users', 18) }}</span><div><p class="sys-num">{{ counts.patients|num }}</p><p class="sys-label">Synthetic patients</p></div></article>
+  <article class="sys-tile"><span class="sys-ico">{{ icon('list', 18) }}</span><div><p class="sys-num">{{ counts.visits|num }}</p><p class="sys-label">Visits stored</p></div></article>
+  <article class="sys-tile"><span class="sys-ico">{{ icon('clock', 18) }}</span><div><p class="sys-num sm">{{ counts['first']|dstr or '-' }} to {{ counts['last']|dstr or '-' }}</p><p class="sys-label">Date range covered</p></div></article>
+</section>
+
+<section class="two-col">
+  <article class="card">
+    <header class="card-head"><h3>Departments</h3><p>{{ depts|length }} in the system</p></header>
+    <ul class="dept-list">
+      {% for d in depts %}<li><span>{{ d.department_name }}</span><b>{{ d.visits|num }} visits</b></li>{% endfor %}
+    </ul>
+    <form class="inline-form tight" method="post" action="{{ url_for('add_department') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field grow"><label for="dname">New department</label><input id="dname" name="name" type="text" maxlength="100" required placeholder="e.g. Nephrology"></div>
+      <div class="filters-actions"><button class="btn btn-primary" type="submit">{{ icon('plus', 16) }}<span>Add department</span></button></div>
+    </form>
+  </article>
+
+  <div class="stack">
+    <article class="card">
+      <header class="card-head"><h3>Add a synthetic patient</h3><p>Only an age band and an optional gender are stored</p></header>
+      <form class="inline-form tight" method="post" action="{{ url_for('add_patient') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label for="pband">Age band</label>
+          <select id="pband" name="age_band" required>{% for b in age_bands %}<option>{{ b }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="pgender">Gender (optional)</label>
+          <select id="pgender" name="gender"><option value="">Not shared</option>{% for g in genders %}<option>{{ g }}</option>{% endfor %}</select></div>
+        <div class="filters-actions"><button class="btn btn-primary" type="submit">{{ icon('plus', 16) }}<span>Add patient</span></button></div>
+      </form>
+    </article>
+
+    <article class="card danger-zone">
+      <header class="card-head"><h3>Regenerate synthetic data</h3><p>Replaces every patient and visit. Accounts are kept.</p></header>
+      <form class="inline-form tight" method="post" action="{{ url_for('regenerate') }}" data-confirm="Replace all patients and visits with a fresh synthetic dataset?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field"><label for="months">Period</label>
+          <select id="months" name="months"><option value="6">6 months</option><option value="12">12 months</option><option value="18" selected>18 months</option><option value="24">24 months</option></select></div>
+        <div class="field"><label for="confirm">Type RESET to confirm</label><input id="confirm" name="confirm" type="text" autocomplete="off" placeholder="RESET" required></div>
+        <div class="filters-actions"><button class="btn btn-danger" type="submit"><span>Regenerate data</span></button></div>
+      </form>
+    </article>
+  </div>
+</section>
+{% endblock %}

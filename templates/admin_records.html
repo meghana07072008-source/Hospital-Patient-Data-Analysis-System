@@ -1,0 +1,84 @@
+{% extends "layout_app.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Visit records{% endblock %}
+{% block page_title %}Visit records{% endblock %}
+{% block page_sub %}Synthetic appointment records. Visible to administrators only, and every view is logged.{% endblock %}
+{% block content %}
+
+<form class="filters card" method="get" action="{{ url_for('admin_records') }}">
+  <div class="field">
+    <label for="department_id">Department</label>
+    <select id="department_id" name="department_id">
+      <option value="">All departments</option>
+      {% for d in departments %}<option value="{{ d.department_id }}" {{ 'selected' if keep.department_id == d.department_id|string }}>{{ d.department_name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="visit_type">Visit type</label>
+    <select id="visit_type" name="visit_type">
+      <option value="">All types</option>
+      {% for t in visit_types %}<option value="{{ t }}" {{ 'selected' if keep.visit_type == t }}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field"><label for="start">From</label><input id="start" type="date" name="start" value="{{ keep.start }}"></div>
+  <div class="field"><label for="end">To</label><input id="end" type="date" name="end" value="{{ keep.end }}"></div>
+  <div class="field"><label for="patient">Patient code</label><input id="patient" type="text" name="patient" value="{{ keep.patient }}" placeholder="PT-000123" inputmode="numeric"></div>
+  <div class="filters-actions">
+    <button class="btn btn-primary" type="submit">{{ icon('search', 16) }}<span>Search</span></button>
+    <a class="btn btn-ghost" href="{{ url_for('admin_records') }}">Reset</a>
+  </div>
+</form>
+
+<section class="card">
+  <header class="card-head"><h3>{{ total|num }} visit{{ '' if total == 1 else 's' }}</h3><p>Page {{ page }} of {{ pages }}</p></header>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="table table-hover">
+      <thead><tr><th>Visit</th><th>Date</th><th>Department</th><th>Type</th><th>Patient</th><th>Age band</th><th>Gender</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td class="muted">#{{ r.visit_id }}</td>
+          <td>{{ r.visit_date|dstr }}</td>
+          <td>{{ r.department_name }}</td>
+          <td><span class="pill pill-{{ r.visit_type|lower|replace('-', '') }}">{{ r.visit_type }}</span></td>
+          <td><code>{{ r.patient_id|pcode }}</code></td>
+          <td>{{ r.age_band }}</td>
+          <td>{{ r.gender or 'Not shared' }}</td>
+          <td class="num">
+            <form method="post" action="{{ url_for('delete_visit', visit_id=r.visit_id) }}" data-confirm="Delete visit #{{ r.visit_id }}? This cannot be undone.">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="icon-btn icon-btn-danger" type="submit" aria-label="Delete visit {{ r.visit_id }}">{{ icon('trash', 16) }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav class="pager" aria-label="Pages">
+    {% if page > 1 %}<a class="btn btn-ghost btn-sm" href="?{{ keep_qs }}{{ '&' if keep_qs }}page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a class="btn btn-ghost btn-sm" href="?{{ keep_qs }}{{ '&' if keep_qs }}page={{ page + 1 }}">Next</a>{% endif %}
+  </nav>
+  {% else %}
+    <p class="empty">No visits match these filters. Reset the filters or add a visit below.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <header class="card-head"><h3>Add a visit</h3><p>Use a synthetic patient code from Data tools</p></header>
+  <form class="inline-form" method="post" action="{{ url_for('add_visit') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="av_patient">Patient code</label><input id="av_patient" name="patient_id" type="text" placeholder="PT-000123" required inputmode="numeric"></div>
+    <div class="field"><label for="av_dept">Department</label>
+      <select id="av_dept" name="department_id" required>
+        {% for d in departments %}<option value="{{ d.department_id }}">{{ d.department_name }}</option>{% endfor %}
+      </select></div>
+    <div class="field"><label for="av_date">Visit date</label><input id="av_date" name="visit_date" type="date" value="{{ today }}" max="{{ today }}" required></div>
+    <div class="field"><label for="av_type">Visit type</label>
+      <select id="av_type" name="visit_type" required>{% for t in visit_types %}<option>{{ t }}</option>{% endfor %}</select></div>
+    <div class="filters-actions"><button class="btn btn-primary" type="submit">{{ icon('plus', 16) }}<span>Add visit</span></button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "layout_auth.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Sign in{% endblock %}
+{% block card %}
+<h2>Sign in</h2>
+<p class="muted">Open your dashboard with your Pulseboard account.</p>
+
+<form method="post" class="form" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
+  <div class="field">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" value="{{ email }}" autocomplete="username" autofocus required placeholder="you@hospital.local">
+  </div>
+
+  <div class="field">
+    <label for="password">Password</label>
+    <div class="pw">
+      <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your password">
+      <button type="button" class="pw-toggle" data-toggle-pw aria-label="Show password">{{ icon('eye', 18) }}</button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+</form>
+
+<p class="switch">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+
+{% if config.SHOW_DEMO_HINT %}
+<details class="demo">
+  <summary>Try a demo account</summary>
+  <div class="demo-rows">
+    <button type="button" class="demo-row" data-fill-email="{{ config.DEMO_USER_EMAIL }}" data-fill-pass="{{ config.DEMO_USER_PASSWORD }}">
+      <strong>User dashboard</strong><span>{{ config.DEMO_USER_EMAIL }}</span>
+    </button>
+    <button type="button" class="demo-row" data-fill-email="{{ config.ADMIN_EMAIL }}" data-fill-pass="{{ config.ADMIN_PASSWORD }}">
+      <strong>Admin dashboard</strong><span>{{ config.ADMIN_EMAIL }}</span>
+    </button>
+  </div>
+  <p class="hint">Click one to fill the form. Set SHOW_DEMO_HINT=0 in .env to hide this panel.</p>
+</details>
+{% endif %}
+{% endblock %}

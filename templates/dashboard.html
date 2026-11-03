@@ -1,0 +1,13 @@
+{% extends "layout_app.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Hello, {{ current_user.full_name.split()[0] }}. Here is how visit volume looks across departments.{% endblock %}
+{% block content %}
+  {% with dash_scope='user' %}{% include "_dash_core.html" %}{% endwith %}
+{% endblock %}
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}
